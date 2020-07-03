@@ -27,7 +27,7 @@ OrtInferWrapper::~OrtInferWrapper() {
 }
 
 bool OrtInferWrapper::Init() {
-#ifdef PRED
+#ifdef DYNAMIC
   std::string model_path("../dynamic_semantic_map_evaluator.onnx");
 #else
   std::string model_path("../image_fixed.onnx");
@@ -125,20 +125,14 @@ bool OrtInferWrapper::Infer(const std::vector<float*> inputs,
   auto memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
   std::vector<Ort::Value> ort_inputs;
 
-  std::cout << "flag1" << " inputs=" << inputs.size() << std::endl;
   // compute size
   std::vector<size_t> inputs_sizes;
   for (size_t i = 0; i < inputs.size(); ++i) {
     auto dims = inputs_dims[i];
     auto size = std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<int64_t>());
-    std::cout << " dims=" << dims.size() << std::endl;
-    for (int j = 0; j < static_cast<int>(dims.size()); ++j) {
-      std::cout << " dim=" << j << " size=" << dims[j] << std::endl;
-    }
     ort_inputs.emplace_back(Ort::Value::CreateTensor<float>(memory_info,
         inputs[i], static_cast<size_t>(size), inputs_dims[i].data(), inputs_dims[i].size()));
   }
-  std::cout << "flag2" << std::endl;
 
   auto start_t = system_clock::now();
   std::vector<Ort::Value> ort_outputs =

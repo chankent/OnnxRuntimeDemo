@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
   std::vector<float*> outputs;
   std::vector<std::vector<int64_t>> outputs_dims;
 
-#ifdef PRED
+#ifdef DYNAMIC
   // size_t size1 = 4 * 1 * 4 * 224 * 224;
   size_t size1 = 224 * 224 * 6;
   inputs.emplace_back(new float[size1]);
@@ -65,32 +65,33 @@ int main(int argc, char** argv) {
   int loops = 200;
   for (int i = 0; i < loops; ++i) {
     infer_wrapper.Infer(inputs, inputs_dims, &outputs, &outputs_dims);
+#if 0
+    int out_h = outputs_dims[0][2];
+    int out_w = outputs_dims[0][3];
+    cv::Mat gray_mat(cv::Size(out_w, out_h), CV_32FC1);
+    gray_mat.setTo(cv::Scalar(0));
+    memcpy(gray_mat.data, outputs[0] + out_h * out_w, gray_mat.total() * sizeof(float));
+    cv::Mat temp;
+    gray_mat.convertTo(temp, CV_8UC1, 255.0f);
+    cv::imshow("temp gray", temp);
+    // cv::Mat show_mat;
+    cv::waitKey();
+#endif
+
+    for (size_t i = 0; i < outputs.size(); ++i) {
+      delete [] outputs[i];
+    }
   }
   auto end_t = system_clock::now();
   auto duration_t = duration_cast<microseconds>(end_t - start_t);
   std::cout << "loops=" << loops << " avg_time="
             << double(duration_t.count()) * microseconds::period::num / microseconds::period::den / loops << std::endl;
 
-#ifdef PRED
+#ifdef DYNAMIC
   for (size_t i = 0; i < inputs.size(); ++i) {
     delete [] inputs[i];
   }
-#else
-  int out_h = outputs_dims[0][2];
-  int out_w = outputs_dims[0][3];
-  cv::Mat gray_mat(cv::Size(out_w, out_h), CV_32FC1);
-  gray_mat.setTo(cv::Scalar(0));
-  memcpy(gray_mat.data, outputs[0] + out_h * out_w, gray_mat.total() * sizeof(float));
-  cv::Mat temp;
-  gray_mat.convertTo(temp, CV_8UC1, 255.0f);
-  cv::imshow("temp gray", temp);
-  // cv::Mat show_mat;
-  cv::waitKey();
 #endif
-
-  for (size_t i = 0; i < outputs.size(); ++i) {
-    delete [] outputs[i];
-  }
 
   return 0;
 }
