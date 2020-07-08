@@ -24,7 +24,6 @@ class OrtInferWrapper {
   OrtInferWrapper();
   ~OrtInferWrapper();
 
-  // bool Infer();
   bool Infer(const std::vector<float*> inputs, 
              const std::vector<std::vector<int64_t>> inputs_dims,
              std::vector<float*>* outputs,

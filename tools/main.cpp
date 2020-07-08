@@ -50,7 +50,12 @@ int main(int argc, char** argv) {
     inputs[1][i] = (float)rand() / RAND_MAX;
   }
 #else
-  cv::Mat src_image = cv::imread("../img100.jpg");
+  std::string image_path("../data/img100.jpg");
+  cv::Mat src_image = cv::imread(image_path);
+  if (src_image.empty()) {
+    std::cout << "Failed to load image - [" << image_path << "]" << std::endl;
+    return -1;
+  }
   int resize_height = 512;
   int resize_width = 1024;
   cv::Mat image;

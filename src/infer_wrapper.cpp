@@ -16,8 +16,6 @@
 #include <chrono>
 using namespace std::chrono;
 
-// #define PRED 1
-
 namespace ortdemo {
   
 OrtInferWrapper::OrtInferWrapper() {
@@ -29,13 +27,13 @@ OrtInferWrapper::~OrtInferWrapper() {
 }
 
 bool OrtInferWrapper::Init() {
-#ifdef PRED
-  std::string model_path("../dynamic_semantic_map_evaluator.onnx");
+#ifdef DYNAMIC
+  std::string model_path("../models/dynamic_semantic_map_evaluator.onnx");
 #else
-  std::string model_path("../lane_seg_container_0626_10_epoch29.onnx");
+  std::string model_path("../models/image_fixed.onnx");
 #endif
   size_t gpu_id = 0;
-  size_t thread_num = 1;
+  size_t thread_num = 16;
 
   // init session
   env_.reset(new Ort::Env(ORT_LOGGING_LEVEL_WARNING, "test"));
@@ -144,9 +142,12 @@ bool OrtInferWrapper::Infer(const std::vector<float*> inputs,
   auto end_t = system_clock::now();
   auto duration_t = duration_cast<microseconds>(end_t - start_t);
   g_loop_count++;
-  g_total_time += double(duration_t.count()) * microseconds::period::num / microseconds::period::den;
-  std::cout << "cur loop=" << g_loop_count << " avg_time="
-            << g_total_time / g_loop_count << std::endl;
+  // skip the first iter, which is always slow to warmup the device
+  if (g_loop_count > 1) {
+    g_total_time += double(duration_t.count()) * microseconds::period::num / microseconds::period::den;
+    std::cout << "cur loop=" << g_loop_count << " avg_time="
+              << g_total_time / g_loop_count << std::endl;
+  }
 
   int num_outputs = static_cast<int>(session_->GetOutputCount());
   outputs->resize(num_outputs);
